@@ -56,8 +56,8 @@ class Credentials:
         else:
             print('security_keys.yaml file not found')
             return None
-
-    def update_security_key(self, system_name):
+    @classmethod
+    def update_security_key(cls, system_name):
         """
         Update the security keys by generating a new key for the specified API_NAME.
 
@@ -67,8 +67,8 @@ class Credentials:
         Returns:
             dict or None: Updated security keys or None if the file is not found.
         """
-        security_keys = self.load_security_keys()
-        security_keys = self.security_key_generator(system_name, security_keys)
+        security_keys = cls.load_security_keys()
+        security_keys = cls.security_key_generator(system_name, security_keys)
         return security_keys
 
     @staticmethod
@@ -112,7 +112,7 @@ class Credentials:
             return None
 
     @classmethod
-    def credentials_encrypt_decryptor(cls, security_key, credentials, encrypt=True, encrypted_credentials=None):
+    def credentials_encrypt_decryptor(cls,security_key,credentials=None,system_name=None,encrypt=True, encrypted_credentials=None):
         """
         Encrypt or decrypt credentials using a security key.
         If encrypted_credentials is provided, update it with the encrypted/decrypted credentials.
@@ -128,25 +128,27 @@ class Credentials:
             dict: Updated encrypted credentials.
         """
         if encrypt:
+            value_credentials={}
             if encrypted_credentials is None:
                 encrypted_credentials = {}
-
-            encrypted_credentials = {
-                key: cls.encrypt_decryptor(value, security_key, encrypt)
-                for key, value in credentials.items()
-            }
+                
+                
+            for key, value in credentials.items():
+                value_credentials[key] = cls.encrypt_decryptor(value, security_key, encrypt)
+            encrypted_credentials[system_name]=value_credentials
 
             with open('credentials.yaml', 'w') as credentials_file:
                 yaml.dump(encrypted_credentials, credentials_file)
 
             return encrypted_credentials
         else:
-            if os.path.exists('credentials.yaml'):
-                with open('credentials.yaml', 'r') as credentials_file:
-                    encrypted_credentials = yaml.safe_load(credentials_file)
-            else:
-                print('credentials.yaml file not found')
-                return None
+            # if os.path.exists('credentials.yaml'):
+            #     with open('credentials.yaml', 'r') as credentials_file:
+            #         encrypted_credentials = yaml.safe_load(credentials_file)
+            # else:
+            #     print('credentials.yaml file not found')
+            #     return None
+            
 
             decrypted_credentials = {
                 key: cls.encrypt_decryptor(value, security_key, encrypt)
